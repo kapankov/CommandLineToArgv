@@ -1,8 +1,8 @@
 # C++ implementation of the CommandLineToArgv function
 
-WinAPI has a function **CommandLineToArgvW** (but there is no version for ANSI strings - CommandLineToArgvA), which according to the documentation �*Parses a Unicode command line string and returns an array of pointers to the command line arguments, along with a count of such arguments, in a way that is similar to the standard C run-time argv and argc values*�.
+WinAPI has a function **CommandLineToArgvW** (but there is no version for ANSI strings - CommandLineToArgvA), which according to the documentation ‘*Parses a Unicode command line string and returns an array of pointers to the command line arguments, along with a count of such arguments, in a way that is similar to the standard C run-time argv and argc values*’.
 
-This function returns *a pointer to an array of LPWSTR values, similar to argv*.
+This function returns ‘*a pointer to an array of LPWSTR values, similar to argv*’.
 
 ## Using
 
