@@ -2,7 +2,14 @@
 
 #include "CommandLineToArgv.h"
 
-void print_args(int argc, _TCHAR** argv)
+#ifdef _WIN32
+#include <tchar.h>
+#else
+typedef char TCHAR;
+typedef char* LPTSTR;
+#endif
+
+void print_args(int argc, TCHAR** argv)
 {
 	while (argc--)
 #ifdef _UNICODE
@@ -12,7 +19,7 @@ void print_args(int argc, _TCHAR** argv)
 #endif
 }
 
-int _tmain(int argc, _TCHAR** argv)
+int _tmain(int argc, TCHAR** argv)
 {
 	std::cout << "original:\n";
 

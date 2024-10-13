@@ -4,7 +4,8 @@
 
 #ifdef _WIN32
 #include <windows.h>
-#include <tchar.h>
+#else
+#define MAX_PATH 260
 #endif
 
 namespace detail
@@ -20,18 +21,26 @@ namespace detail
 	wchar_t tchar<wchar_t>(char c, wchar_t w) { return w; }
 
 	template<typename T>
-	DWORD GetModuleFileName(HMODULE hModule, T* lpFilename, DWORD nSize);
+	int GetCurrentModuleFileName(T* lpFilename, int nSize);
 
 	template<>
-	DWORD GetModuleFileName<char>( HMODULE hModule, LPSTR lpFilename, DWORD nSize)
+	int GetCurrentModuleFileName<char>(char* lpFilename, int nSize)
 	{
-		return GetModuleFileNameA(hModule, lpFilename, nSize);
+#ifdef _WIN32
+		return GetModuleFileNameA(nullptr, lpFilename, nSize);
+#else
+		return 0;
+#endif
 	}
 
 	template<>
-	DWORD GetModuleFileName<wchar_t>(HMODULE hModule, LPWSTR lpFilename, DWORD nSize)
+	int GetCurrentModuleFileName<wchar_t>(wchar_t* lpFilename, int nSize)
 	{
-		return GetModuleFileNameW(hModule, lpFilename, nSize);
+#ifdef _WIN32
+		return GetModuleFileNameW(nullptr, lpFilename, nSize);
+#else
+		return 0;
+#endif
 	}
 } // end of detail namespace
 
@@ -162,28 +171,24 @@ void parse_cmdline(
 template<typename T>
 T** CommandLineToArgv(const T* lpCmdLine, int* pNumArgs)
 {
-	if (!pNumArgs) {
-		::SetLastError(ERROR_INVALID_PARAMETER);
-		return nullptr;
-	}
+	if (!pNumArgs)
+		throw std::invalid_argument("Invalid arguments of the CommandLineToArgv function");
 
 	T mod_name[MAX_PATH];
 	T* cmd_start = (T*)lpCmdLine;
 
 	if (!lpCmdLine || *lpCmdLine == TT(T, '\0'))
 	{
-		detail::GetModuleFileName(nullptr, mod_name, sizeof(mod_name) / sizeof(T));
+		detail::GetCurrentModuleFileName(mod_name, sizeof(mod_name) / sizeof(T));
 	}
 
-	INT num_bytes = 0;
+	int num_bytes = 0;
 
 	parse_cmdline<T>(cmd_start, nullptr, pNumArgs, &num_bytes);
 
 	T** argv = (T**)::calloc((*pNumArgs + 1) * sizeof(T*) + num_bytes, 1);
-	if (!argv) {
-		::SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-		return nullptr;
-	}
+	if (!argv)
+		throw std::bad_alloc();
 
 	parse_cmdline<T>(cmd_start, argv,
 		pNumArgs, &num_bytes);
