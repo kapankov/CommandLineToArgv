@@ -1,11 +1,25 @@
-#pragma once
+/**
+ * \file CommandLineToArgv.h
+ *
+ * \brief C++ implementation of the CommandLineToArgv function
+ *
+ * \author Konstantin A. Pankov
+ * Contact: explorus@mail.ru
+ *
+ * \copyright Copyright (c) 2024 Konstantin A. Pankov
+ *
+ * \license  Licensed under the MIT License.
+ */
+#ifndef COMMANDLINETOARGV_H
+#define COMMANDLINETOARGV_H
 
 #include <type_traits>
 
 #ifdef _WIN32
 #include <windows.h>
-#include <tchar.h>
-#endif
+#else
+#define MAX_PATH 260
+#endif // _WIN32
 
 namespace detail
 {
@@ -20,41 +34,63 @@ namespace detail
 	wchar_t tchar<wchar_t>(char c, wchar_t w) { return w; }
 
 	template<typename T>
-	DWORD GetModuleFileName(HMODULE hModule, T* lpFilename, DWORD nSize);
+	int GetCurrentModuleFileName(T* lpFilename, int nSize);
 
 	template<>
-	DWORD GetModuleFileName<char>( HMODULE hModule, LPSTR lpFilename, DWORD nSize)
+	int GetCurrentModuleFileName<char>(char* lpFilename, int nSize)
 	{
-		return GetModuleFileNameA(hModule, lpFilename, nSize);
+#ifdef _WIN32
+		return GetModuleFileNameA(nullptr, lpFilename, nSize);
+#else
+		// not implemented
+		return 0;
+#endif // _WIN32
 	}
 
 	template<>
-	DWORD GetModuleFileName<wchar_t>(HMODULE hModule, LPWSTR lpFilename, DWORD nSize)
+	int GetCurrentModuleFileName<wchar_t>(wchar_t* lpFilename, int nSize)
 	{
-		return GetModuleFileNameW(hModule, lpFilename, nSize);
+#ifdef _WIN32
+		return GetModuleFileNameW(nullptr, lpFilename, nSize);
+#else
+		// not implemented
+		return 0;
+#endif // _WIN32
 	}
-} // end of detail namespace
+} // detail namespace
 
 #define L(x) L##x
 #define TT( T, V ) (detail::tchar<T>(V, L(V)))
 
-
+/**
+ * \brief Parses the command line.
+ *
+ * Parses the command line and if argv and argc arguments are specified,
+ * returns the command line arguments, otherwise calculates the amount
+ * of memory to allocate for argv.
+ *
+ * \param cmdline [in] Command string (pointer to char or wchar_t).
+ * \param argv [int, out] Pointer to an array of arguments (strings).
+ * \param argc [in, out] Number of arguments on the command line.
+ * \param num_bytes [out] Number of bytes required for argv.
+ * \return No return.
+ */
 template<typename T>
 void parse_cmdline(
 	T* cmdline,
 	T** argv,
-	int* num_args,
+	int* argc,
 	int* num_bytes
 )
 {
 	T* p = cmdline;
 	T* lpstr = nullptr;
 
-	if (argv && num_args)
-		lpstr = (T*)(((char*)argv) + *num_args * sizeof(T*));
+	if (argv && argc)
+		lpstr = (T*)(((char*)argv) + *argc * sizeof(T*));
 
 	*num_bytes = 0;
-	*num_args = 1;
+	*argc = 1;
 
 	if (argv)
 		*argv++ = lpstr;
@@ -106,7 +142,7 @@ void parse_cmdline(
 
 		if (argv)
 			*argv++ = lpstr;
-		++*num_args;
+		++*argc;
 
 		do
 		{
@@ -159,34 +195,46 @@ void parse_cmdline(
 
 }
 
+/**
+ * \brief Gets argv and argc values from the command line.
+ *
+ * Parses a Unicode command line string and returns an array of pointers
+ * to the command line arguments, along with a count of such arguments,
+ * in a way that is similar to the standard C run-time argv and argc values.
+ *
+ * \param lpCmdLine Pointer to a null-terminated Unicode string that
+ * contains the full command line. If this parameter is an empty string
+ * the function returns the path to the current executable file
+ * \param pNumArgs Pointer to an int that receives the number of array
+ * elements returned, similar to argc.
+ * \return A pointer to an array of T* values, similar to argv.
+ */
 template<typename T>
 T** CommandLineToArgv(const T* lpCmdLine, int* pNumArgs)
 {
-	if (!pNumArgs) {
-		::SetLastError(ERROR_INVALID_PARAMETER);
-		return nullptr;
-	}
+	if (!pNumArgs)
+		throw std::invalid_argument("Invalid arguments of the CommandLineToArgv function");
 
 	T mod_name[MAX_PATH];
 	T* cmd_start = (T*)lpCmdLine;
 
 	if (!lpCmdLine || *lpCmdLine == TT(T, '\0'))
 	{
-		detail::GetModuleFileName(nullptr, mod_name, sizeof(mod_name) / sizeof(T));
+		detail::GetCurrentModuleFileName(mod_name, sizeof(mod_name) / sizeof(T));
 	}
 
-	INT num_bytes = 0;
+	int num_bytes = 0;
 
 	parse_cmdline<T>(cmd_start, nullptr, pNumArgs, &num_bytes);
 
 	T** argv = (T**)::calloc((*pNumArgs + 1) * sizeof(T*) + num_bytes, 1);
-	if (!argv) {
-		::SetLastError(ERROR_NOT_ENOUGH_MEMORY);
-		return nullptr;
-	}
+	if (!argv)
+		throw std::bad_alloc();
 
 	parse_cmdline<T>(cmd_start, argv,
 		pNumArgs, &num_bytes);
 
 	return argv;
 }
+
+#endif // COMMANDLINETOARGV_H
