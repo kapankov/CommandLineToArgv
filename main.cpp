@@ -96,6 +96,7 @@ void print_args(int argc, TCHAR** argv)
 }
 
 int _tmain(int argc, TCHAR** argv)
+int _tmain(int argc, TCHAR** argv)
 {
 	std::cout << "original:\n";
 
@@ -117,3 +118,4 @@ int _tmain(int argc, TCHAR** argv)
 
 	return 0;
 }
+

@@ -35,8 +35,10 @@ namespace detail
 
 	template<typename T>
 	int GetCurrentModuleFileName(T* lpFilename, int nSize);
+	int GetCurrentModuleFileName(T* lpFilename, int nSize);
 
 	template<>
+	int GetCurrentModuleFileName<char>(char* lpFilename, int nSize)
 	int GetCurrentModuleFileName<char>(char* lpFilename, int nSize)
 	{
 #ifdef _WIN32
@@ -48,6 +50,7 @@ namespace detail
 	}
 
 	template<>
+	int GetCurrentModuleFileName<wchar_t>(wchar_t* lpFilename, int nSize)
 	int GetCurrentModuleFileName<wchar_t>(wchar_t* lpFilename, int nSize)
 	{
 #ifdef _WIN32
@@ -214,6 +217,8 @@ T** CommandLineToArgv(const T* lpCmdLine, int* pNumArgs)
 {
 	if (!pNumArgs)
 		throw std::invalid_argument("Invalid arguments of the CommandLineToArgv function");
+	if (!pNumArgs)
+		throw std::invalid_argument("Invalid arguments of the CommandLineToArgv function");
 
 	T mod_name[MAX_PATH];
 	T* cmd_start = (T*)lpCmdLine;
@@ -221,13 +226,17 @@ T** CommandLineToArgv(const T* lpCmdLine, int* pNumArgs)
 	if (!lpCmdLine || *lpCmdLine == TT(T, '\0'))
 	{
 		detail::GetCurrentModuleFileName(mod_name, sizeof(mod_name) / sizeof(T));
+		detail::GetCurrentModuleFileName(mod_name, sizeof(mod_name) / sizeof(T));
 	}
 
+	int num_bytes = 0;
 	int num_bytes = 0;
 
 	parse_cmdline<T>(cmd_start, nullptr, pNumArgs, &num_bytes);
 
 	T** argv = (T**)::calloc((*pNumArgs + 1) * sizeof(T*) + num_bytes, 1);
+	if (!argv)
+		throw std::bad_alloc();
 	if (!argv)
 		throw std::bad_alloc();
 
