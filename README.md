@@ -22,8 +22,6 @@ LPTSTR* argv = CommandLineToArgv(::GetCommandLine(), &argc);
 ```
 To free the memory, use a single call to the **free** function (Not LocalFree).
 
-For now, only Windows is supported. I will try to add support for Linux and maybe MacOs in the near future
-
 ## Motivation
 
 CommandLineToArgvW works correctly in most cases. But the following command line (to be honest, it is extremely untypical and not quite correct):
